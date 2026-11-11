@@ -1,0 +1,36 @@
+<<<<<<< HEAD
+### IntelliJ ###
+/.idea/
+/shelf/
+/workspace.xml
+/httpRequests/
+/dataSources/
+/dataSources.local.xml
+/out/
+
+### Maven ###
+target/
+
+### Gradle ###
+.gradle/
+build/
+
+### Java ###
+*.class
+*.log
+
+# Backup / Sistema
+*.iml
+=======
+/target/
+
+.idea/
+*.iml
+*.iws
+*.ipr
+
+.DS_Store
+
+*.log
+logs/
+>>>>>>> 1c1407b0173891083cf130b9214170d98d62f9fe

@@ -1,0 +1,216 @@
+@startuml
+hide circle
+hide methods
+skinparam monochrome true
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+
+' ===================== INFRASTRUCTURE =====================
+package "Infrastructure" {
+
+  abstract class Facility {
+    +name
+    +latitude
+    +longitude
+    +isIntermodal
+  }
+
+  class FacilityType{
+    +typeName
+  }
+
+ Facility "1" -- "1" FacilityType
+
+
+  class Owner {
+    +name
+  }
+
+  class Gauge {
+    +name
+    +widthMM
+  }
+
+  class RailwayLine {
+    +name
+  }
+
+  class RailwaySegment {
+    +length
+    +electrified
+    +numberTracks
+    +speedLimit
+    +weightLimit
+  }
+
+  Owner "1" -- "1..*" RailwayLine : owns >
+  RailwayLine "1" -- "1..*" RailwaySegment : composedOf >
+  RailwayLine "1" -- "1" Facility : startsAt >
+  RailwayLine "1" -- "1" Facility : endsAt >
+
+  Gauge "1" -- "0..*" RailwayLine : allowedOn >
+  Gauge "1" -- "0..*" RailwaySegment : supports >
+
+
+}
+
+' ===================== BUILDINGS & CARGO =====================
+package "Facilities & Cargo" {
+
+  class Building {
+    +name
+  }
+
+  class BuildingType{
+    +typeName
+  }
+
+  Building "1" -- "1" BuildingType
+
+  Facility "1" -- "0..*" Building : contains >
+
+  class Cargo {
+    +quantity
+    +expiryDate
+    +receivedAt
+  }
+
+  class CargoType {
+    +typeName
+  }
+
+  Cargo "1" -- "1" CargoType : ofType >
+  Cargo "1" -- "1" Building : storedAt >
+
+  class Warehouse {
+      +capacity
+    }
+
+    class Aisle {
+      +aisleNumber
+    }
+
+    class Bay {
+      +bayNumber
+      +capacity
+    }
+
+    Building "1" -- "0..*" Warehouse : contains >
+    Warehouse "1" -- "0..*" Aisle : contains >
+    Aisle "1" -- "0..*" Bay : contains >
+
+    Cargo "1" -- "0..*" Bay : storedIn >
+}
+
+' ===================== OPERATORS & ROLLING STOCK =====================
+package "Rolling Stock & Operators" {
+
+  Gauge "1" -- "0..*" Locomotive : compatibleWith >
+  Gauge "1" -- "0..*" Wagon : compatibleWith >
+
+  class Operator {
+    +name
+    +shortName
+  }
+
+  class Locomotive {
+    +name
+    +serviceYear
+    +serviceStart
+  }
+
+  class Wagon {
+      +name
+      +serviceStart
+      +serviceYear
+  }
+
+
+
+  abstract class LocomotiveModel {
+    +make
+    +power
+    +acceleration
+    +maxSpeed
+    +weight
+    +tareWeight
+    +maxWeight
+    +numberOfBogies
+    +maker
+    +length
+    +weight
+    +width
+  }
+
+  class DieselLocomotiveModel {
+    +fuelCapacity
+  }
+
+  class ElectricLocomotiveModel {
+    +voltage
+    +frequency
+  }
+
+  LocomotiveModel <|-- DieselLocomotiveModel
+  LocomotiveModel <|-- ElectricLocomotiveModel
+
+  Locomotive "1" -- "1" LocomotiveModel : ofModel >
+
+  class WagonModel {
+    +capacity
+    +volumeCapacity
+    +length
+    +height
+    +maxSpeed
+    +tareWeight
+    +maxWeight
+    +numberOfBogies
+    +maker
+    +length
+    +height
+  }
+
+  class WagonModelType{
+    +typeName
+  }
+
+  WagonModel "1" -- "1" WagonModelType
+
+  Wagon "1" -- "1" WagonModel : ofModel >
+
+  Operator "1" -- "0..*" Locomotive : owns >
+  Operator "1" -- "0..*" Wagon : owns >
+}
+
+package "Freight & Train Operations" {
+
+  class Freight {
+    +departureTime
+    +arrivalTime
+    +status
+  }
+
+  Freight "1" -- "1" Facility : origin >
+  Freight "1" -- "1" Facility : destination >
+  Freight "1" -- "1..*" Wagon : includes >
+
+  class Train {
+    +name
+    +plannedStartDateTime
+  }
+
+  Train "1" -- "1..*" Locomotive : isPulledBy >
+
+  Train "1" -- "1..*" Freight : carries >
+
+
+  class Route {
+    +isComplex
+  }
+
+  Train "1" -- "1" Route : follows >
+  Route "1" -- "2..*" Facility : passesThrough
+
+}
+
+@enduml

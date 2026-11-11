@@ -1,0 +1,207 @@
+package pt.ipp.isep.dei.pi25_26.g093.app.ui;
+
+import pt.ipp.isep.dei.pi25_26.g093.app.controller.GeoAreaSearchController;
+import pt.ipp.isep.dei.pi25_26.g093.app.domain.CompleteStation;
+import pt.ipp.isep.dei.pi25_26.g093.app.service.GeoAreaSearchResult;
+
+import java.util.List;
+import java.util.Scanner;
+
+/**
+ * User interface for USEI08 - Search by Geographical Area (Rectangular Query).
+ * 
+ * <p>This UI class handles user interaction for rectangular geographical searches,
+ * including input validation, filter selection, and result display.
+ * 
+ * <p>Features:
+ * <ul>
+ *   <li>Validates latitude and longitude ranges during input</li>
+ *   <li>Supports optional filters (isCity, isMainStation, country)</li>
+ *   <li>Displays results with execution metrics</li>
+ *   <li>Shows sample queries for reference</li>
+ * </ul>
+ * 
+ * @author ESINF Sprint 2 Team
+ * @see GeoAreaSearchController
+ */
+public class GeoAreaSearchUI {
+
+    private final GeoAreaSearchController controller;
+    private final Scanner sc;
+
+    // ANSI Colors (optional)
+    private static final String BLUE = "\u001B[34m";
+    private static final String CYAN = "\u001B[36m";
+    private static final String GREEN = "\u001B[32m";
+    private static final String YELLOW = "\u001B[33m";
+    private static final String RED = "\u001B[31m";
+    private static final String RESET = "\u001B[0m";
+    private static final String BOLD = "\u001B[1m";
+
+    /**
+     * Constructs a new GeoAreaSearchUI with default controller.
+     */
+    public GeoAreaSearchUI() {
+        this.controller = new GeoAreaSearchController();
+        this.sc = new Scanner(System.in);
+    }
+
+    /**
+     * Runs the USEI08 user interface.
+     * 
+     * <p>This method:
+     * <ol>
+     *   <li>Prompts for rectangular region bounds (latMin, latMax, lonMin, lonMax)</li>
+     *   <li>Validates input ranges</li>
+     *   <li>Prompts for optional filters</li>
+     *   <li>Executes the search and displays results</li>
+     * </ol>
+     * 
+     * <p>The method handles exceptions gracefully and provides user-friendly
+     * error messages.
+     */
+    public void run() {
+
+        printHeader("USEI08 — Search Stations by Geographical Area");
+
+        try {
+            double latMin = readDouble("Latitude MIN [-90,90]");
+            double latMax = readDouble("Latitude MAX [-90,90]");
+            double lonMin = readDouble("Longitude MIN [-180,180]");
+            double lonMax = readDouble("Longitude MAX [-180,180]");
+
+            // Validate range ordering before proceeding
+            if (latMin > latMax) {
+                System.out.println(RED + "ERROR: latMin cannot be greater than latMax." + RESET);
+                pause();
+                return;
+            }
+            if (lonMin > lonMax) {
+                System.out.println(RED + "ERROR: lonMin cannot be greater than lonMax." + RESET);
+                pause();
+                return;
+            }
+
+            printlnSeparator();
+
+            Boolean isCity = readOptionalBoolean("Filter only CITY stations (true/false, blank = no filter)");
+            Boolean isMain = readOptionalBoolean("Filter only MAIN stations (true/false, blank = no filter)");
+            String country = readOptionalString("Filter COUNTRY (PT/ES/ALL, blank = no filter)");
+
+            printlnSeparator();
+
+            GeoAreaSearchResult result =
+                    controller.searchArea(latMin, latMax, lonMin, lonMax, isCity, isMain, country);
+
+            printResult(result);
+
+        } catch (Exception e) {
+            System.out.println(RED + "ERROR: " + e.getMessage() + RESET);
+        }
+
+        pause();
+    }
+
+    // =======================
+    //       UI HELPERS
+    // =======================
+
+    private void printHeader(String title) {
+        System.out.println("\n" + CYAN + BOLD +
+                "=============================================\n" +
+                "     " + title + "\n" +
+                "=============================================" +
+                RESET);
+    }
+
+    private void printlnSeparator() {
+        System.out.println(CYAN + "---------------------------------------------" + RESET);
+    }
+
+    private void pause() {
+        System.out.print("\nPress ENTER to return... ");
+        sc.nextLine();
+    }
+
+    // =======================
+    //     READ METHODS
+    // =======================
+
+    private double readDouble(String msg) {
+        while (true) {
+            System.out.print(YELLOW + msg + ": " + RESET);
+            String input = sc.nextLine().trim();
+            try {
+                double value = Double.parseDouble(input);
+                // Validate latitude range if message contains "Latitude"
+                if (msg.contains("Latitude")) {
+                    if (value < -90 || value > 90) {
+                        System.out.println(RED + "Latitude must be within [-90, 90]. Try again." + RESET);
+                        continue;
+                    }
+                }
+                // Validate longitude range if message contains "Longitude"
+                if (msg.contains("Longitude")) {
+                    if (value < -180 || value > 180) {
+                        System.out.println(RED + "Longitude must be within [-180, 180]. Try again." + RESET);
+                        continue;
+                    }
+                }
+                return value;
+            } catch (NumberFormatException e) {
+                System.out.println(RED + "Invalid number. Try again." + RESET);
+            }
+        }
+    }
+
+    private Boolean readOptionalBoolean(String msg) {
+        System.out.print(YELLOW + msg + ": " + RESET);
+        String input = sc.nextLine().trim();
+
+        if (input.isEmpty()) return null;
+
+        if (input.equalsIgnoreCase("true")) return true;
+        if (input.equalsIgnoreCase("false")) return false;
+
+        System.out.println(RED + "Invalid boolean. Ignoring filter." + RESET);
+        return null;
+    }
+
+    private String readOptionalString(String msg) {
+        System.out.print(YELLOW + msg + ": " + RESET);
+        String input = sc.nextLine().trim();
+        return input.isEmpty() ? null : input;
+    }
+
+    // =======================
+    //     OUTPUT RESULT
+    // =======================
+
+    private void printResult(GeoAreaSearchResult result) {
+
+        List<CompleteStation> stations = result.getStations();
+
+        System.out.println(GREEN + "\n=== RESULTS FOUND: " + stations.size() + " station(s) ===" + RESET);
+
+        if (stations.isEmpty()) {
+            System.out.println(RED + "No stations matched your criteria." + RESET);
+        } else {
+            for (CompleteStation cs : stations) {
+                System.out.println(" • " + cs);
+            }
+        }
+
+        printlnSeparator();
+        System.out.println(BLUE + "Execution time (ns): " + RESET + result.getExecutionTimeNanos());
+        System.out.println(BLUE + "Reported complexity: " + RESET + result.getTemporalComplexity());
+
+        printlnSeparator();
+        System.out.println(GREEN + "Sample queries for reference:" + RESET);
+
+        for (String q : result.getSampleQueries()) {
+            System.out.println(" - " + q);
+        }
+
+        printlnSeparator();
+    }
+}
